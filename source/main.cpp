@@ -1,6 +1,8 @@
 // Embree Packet Size; 8 gives best speedup on my machine for perfectly coherent rays
 #define PACKET_SIZE 8
 
+#define VERBOSE_OUTPUT 0
+
 
 #include <stdio.h>
 #include <iostream>
@@ -65,6 +67,8 @@ public:
 };
 #endif
 
+template <typename T> T min(T a, T b) { return a < b ? a : b; }
+template <typename T> T max(T a, T b) { return a > b ? a : b; }
 
 struct vec3 {
     float x, y, z;
@@ -188,6 +192,7 @@ void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, cons
     SimpleTimer timer;
     timer.init();
     double timeSum = 0.0;
+	double timeMin = DBL_MAX;
     for (int i = 0; i < timing_iterations; ++i) {
         auto query = model->createQuery(queryType);
         query->setRays(rayBuffer);
@@ -199,16 +204,21 @@ void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, cons
         query->finish();
         cudaDeviceSynchronize();
         double timeInMS = timer.tick();
+
         timeSum += timeInMS;
+		timeMin = min(timeMin, timeInMS);
+#if VERBOSE_OUTPUT
         std::cout << "OptiX Prime Iteration " << i << std::endl;
         std::cout << timeInMS << " ms" << std::endl;
         std::cout << (rays.size()*1000.0)/timeInMS << " rays/s" << std::endl;
+#endif
     }
 
     double aveTimeInMS = timeSum / timing_iterations;
-    std::cout << "------ OptiX Prime API Average ------- " << std::endl;
-    std::cout << aveTimeInMS << " ms" << std::endl;
-    std::cout << (rays.size()*1000.0) / aveTimeInMS << " rays/s" << std::endl;
+    std::cout << "------ OptiX Prime API ------- " << std::endl;
+    std::cout << "avg: " << aveTimeInMS << "ms" << std::endl;
+	std::cout << "min: " << timeMin << "ms" << std::endl;
+	std::cout << "max mrays/s: " << (rays.size() / 1000000.0) / (timeMin / 1000.0) << std::endl;
 
     cudaFree(d_rays);
     cudaFree(d_tris);
@@ -249,6 +259,7 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
     SimpleTimer timer;
     timer.init();
     double timeSum = 0.0;
+	double timeMin = DBL_MAX;
     for (int i = 0; i < timing_iterations; ++i) {
         RTCIntersectContext context;
         context.flags = RTCIntersectFlags(RTC_INTERSECT_COHERENT);
@@ -286,30 +297,26 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
                 rtcIntersectNM(scene, &context, (RTCRayN*)&rtcRays[r], PACKET_SIZE, numPackets, sizeof(RTCRayNt<PACKET_SIZE>));
             } // for 
         }); // parallel for
-
-        /*
-        for (int r = 0; r < rays.size(); ++r) {
-            int p = r / PACKET_SIZE; // Packet Index
-            int i = r % PACKET_SIZE; // Index in Packet
-            printf("%d: %u\n", r, rtcRays[p].primID[i]);
-        }*/
-
         double timeInMS = timer.tick();
+
         timeSum += timeInMS;
+		timeMin = min(timeMin, timeInMS);
+#if VERBOSE_OUTPUT
         std::cout << "Embree Stream API Iteration " << i << std::endl;
         std::cout << timeInMS << " ms" << std::endl;
         std::cout << (rays.size()*1000.0) / timeInMS << " rays/s" << std::endl;
+#endif
     }
     double aveTimeInMS = timeSum / timing_iterations;
-    std::cout << "------ Embree Stream API Average ------- " << std::endl;
-    std::cout << aveTimeInMS << " ms" << std::endl;
-    std::cout << (rays.size()*1000.0) / aveTimeInMS << " rays/s" << std::endl;
+    std::cout << "------ Embree Stream API ------- " << std::endl;
+	std::cout << "avg: " << aveTimeInMS << "ms" << std::endl;
+	std::cout << "min: " << timeMin << "ms" << std::endl;
+	std::cout << "max mrays/s: " << (rays.size() / 1000000.0) / (timeMin / 1000.0) << std::endl;
 
     //cleanup
     rtcDeleteGeometry(scene, geomID);
     rtcDeleteScene(scene);
     rtcDeleteDevice(device);
-
 }
 
 int main(int argc, char *argv[]) {
@@ -318,10 +325,24 @@ int main(int argc, char *argv[]) {
     std::vector<SimpleRay> rays;
     loadOFF(argv[1], mesh);
     loadRFF(argv[2], rays);
-    int timingIterations = 10;
+    int timingIterations = 100;
+
+	std::cout << "mesh: " << argv[1] << std::endl;
+	std::cout << "vertices: " << mesh.vertices.size() << std::endl;
+	std::cout << "triangles: " << mesh.indices.size() / 3 << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "rays: " << argv[2] << std::endl;
+	std::cout << "ray count: " << rays.size() << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "iterations: " << timingIterations << std::endl;
+	std::cout << std::endl;
+
     traceOptiX(mesh, rays, timingIterations);
     std::cout << std::endl;
     traceEmbree(mesh, rays, timingIterations);
-    getchar();
+	std::cout << std::endl;
+
     return 0;
 }

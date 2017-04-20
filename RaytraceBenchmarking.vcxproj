@@ -60,8 +60,10 @@
       <AdditionalLibraryDirectories>$(CUDA_PATH)/lib/x64;$(ProjectDir)tbb/win64/lib;$(ProjectDir)embree/win64/lib;$(ProgramData)/NVIDIA Corporation/OptiX SDK 4.0.2/lib64;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)tbb\win64\bin\*.dll" "$(TargetDir)"
-xcopy /y /d  "$(ProjectDir)embree\win64\bin\*.dll" "$(TargetDir)"</Command>
+      <Command>xcopy /y /d "$(ProjectDir)tbb\win64\bin\*.dll" "$(TargetDir)"
+xcopy /y /d "$(ProjectDir)embree\win64\bin\*.dll" "$(TargetDir)"
+xcopy /y /d "$(ProgramData)\NVIDIA Corporation\OptiX SDK 4.0.2\bin64\optix_prime.1.dll" "$(TargetDir)"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -98,8 +100,10 @@ xcopy /y /d  "$(ProjectDir)embree\win64\bin\*.dll" "$(TargetDir)"</Command>
       <AdditionalLibraryDirectories>$(CUDA_PATH)/lib/x64;$(ProjectDir)tbb/win64/lib;$(ProjectDir)embree/win64/lib;$(ProgramData)/NVIDIA Corporation/OptiX SDK 4.0.2/lib64;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)tbb\win64\bin\*.dll" "$(TargetDir)"
-xcopy /y /d  "$(ProjectDir)embree\win64\bin\*.dll" "$(TargetDir)"</Command>
+      <Command>xcopy /y /d "$(ProjectDir)tbb\win64\bin\*.dll" "$(TargetDir)"
+xcopy /y /d "$(ProjectDir)embree\win64\bin\*.dll" "$(TargetDir)"
+xcopy /y /d "$(ProgramData)\NVIDIA Corporation\OptiX SDK 4.0.2\bin64\optix_prime.1.dll" "$(TargetDir)"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
