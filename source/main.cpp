@@ -320,6 +320,7 @@ int main(int argc, char *argv[]) {
     loadRFF(argv[2], rays);
     int timingIterations = 10;
     traceOptiX(mesh, rays, timingIterations);
+    std::cout << std::endl;
     traceEmbree(mesh, rays, timingIterations);
     getchar();
     return 0;

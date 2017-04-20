@@ -22,7 +22,7 @@
     <ProjectGuid>{3FFEDBB3-FAE4-42BB-84E4-50E683CFB531}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <Platform>x64</Platform>
-    <ProjectName>SoLraycasting</ProjectName>
+    <ProjectName>RaytraceBenchmarking</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
