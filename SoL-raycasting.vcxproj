@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="us-ascii"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3FFEDBB3-FAE4-42BB-84E4-50E683CFB531}</ProjectGuid>
-	<Keyword>Win32Proj</Keyword>
+    <Keyword>Win32Proj</Keyword>
     <Platform>x64</Platform>
     <ProjectName>SoLraycasting</ProjectName>
   </PropertyGroup>
@@ -41,12 +41,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include\optixu;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include\optixu;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;$(ProjectDir)embree\include\;$(ProjectDir)tbb\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)tbb\win64\lib;$(ProjectDir)embree\win64\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include\optixu;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include\optixu;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;$(ProjectDir)embree\include\;$(ProjectDir)tbb\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)tbb\win64\lib;$(ProjectDir)embree\win64\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -72,6 +72,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64\optix.1.lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64\optix_prime.1.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64\cudart_static.lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64\optixu.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d  "$(ProjectDir)tbb\win64\bin\*.dll" "$(TargetDir)"
+xcopy /y /d  "$(ProjectDir)embree\win64\bin\*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -105,6 +109,10 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64\optix.1.lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64\optix_prime.1.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64\cudart_static.lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64\optixu.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d  "$(ProjectDir)tbb\win64\bin\*.dll" "$(TargetDir)"
+xcopy /y /d  "$(ProjectDir)embree\win64\bin\*.dll" "$(TargetDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
