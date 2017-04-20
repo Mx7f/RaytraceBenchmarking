@@ -1,3 +1,7 @@
+// Embree Packet Size; 8 gives best speedup on my machine for perfectly coherent rays
+#define PACKET_SIZE 8
+
+
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -235,7 +239,7 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
 
     rtcCommit(scene);
 
-    std::vector<RTCRay> rtcRays;
+    std::vector<RTCRayNt<PACKET_SIZE>> rtcRays;
 
     const RTCError error = rtcDeviceGetError(device);
     if (error != RTC_NO_ERROR) {
@@ -249,39 +253,46 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
         RTCIntersectContext context;
         context.flags = RTCIntersectFlags(RTC_INTERSECT_COHERENT);
         // Setup rays
-        rtcRays.resize(rays.size());
+        rtcRays.resize((rays.size() + PACKET_SIZE-1) / PACKET_SIZE);
         for (int r = 0; r < rays.size(); ++r) {
-            RTCRay ray;
-            ray.org[0] = rays[r].o.x;
-            ray.org[1] = rays[r].o.y;
-            ray.org[2] = rays[r].o.z;
-            ray.dir[0] = rays[r].d.x;
-            ray.dir[1] = rays[r].d.y;
-            ray.dir[2] = rays[r].d.z;
-            ray.tnear = 0.0f;
-            ray.tfar = std::numeric_limits<float>::infinity();
-            ray.instID = RTC_INVALID_GEOMETRY_ID;
-            ray.geomID = RTC_INVALID_GEOMETRY_ID;
-            ray.primID = RTC_INVALID_GEOMETRY_ID;
-            ray.mask = 0xFFFFFFFF;
-            ray.time = 0.0f;
-            rtcRays[r] = ray;
+            int p = r / PACKET_SIZE; // Packet Index
+            int i = r % PACKET_SIZE; // Index in Packet
+            rtcRays[p].orgx[i] = rays[r].o.x;
+            rtcRays[p].orgy[i] = rays[r].o.y;
+            rtcRays[p].orgz[i] = rays[r].o.z;
+            rtcRays[p].dirx[i] = rays[r].d.x;
+            rtcRays[p].diry[i] = rays[r].d.y;
+            rtcRays[p].dirz[i] = rays[r].d.z;
+            rtcRays[p].tnear[i] = 0.0f;
+            rtcRays[p].tfar[i] = std::numeric_limits<float>::infinity();
+            rtcRays[p].instID[i] = RTC_INVALID_GEOMETRY_ID;
+            rtcRays[p].geomID[i] = RTC_INVALID_GEOMETRY_ID;
+            rtcRays[p].primID[i] = RTC_INVALID_GEOMETRY_ID;
+            rtcRays[p].mask[i] = 0xFFFFFFFF;
+            rtcRays[p].time[i] = 0.0f;
         }
 
         timer.tick();
         // Using raw pointers instead of C++ arrays gave no performance increase for the code below
         static const size_t grainSize = 64;
-        tbb::parallel_for(tbb::blocked_range<size_t>(0, rays.size(), grainSize), [&](const tbb::blocked_range<size_t>& r) {
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, rtcRays.size(), grainSize), [&](const tbb::blocked_range<size_t>& r) {
             const size_t start = r.begin();
             const size_t end = r.end();
 
             static const size_t BLOCK_SIZE = 64;
             for (size_t r = start; r < end; r += BLOCK_SIZE) {
 
-                const size_t numRays = std::min(BLOCK_SIZE, end - r);
-                rtcIntersectNM(scene, &context, (RTCRayN*)&rtcRays[r], 1, numRays, sizeof(RTCRay));
+                const size_t numPackets = std::min(BLOCK_SIZE, end - r);
+                rtcIntersectNM(scene, &context, (RTCRayN*)&rtcRays[r], PACKET_SIZE, numPackets, sizeof(RTCRayNt<PACKET_SIZE>));
             } // for 
         }); // parallel for
+
+        /*
+        for (int r = 0; r < rays.size(); ++r) {
+            int p = r / PACKET_SIZE; // Packet Index
+            int i = r % PACKET_SIZE; // Index in Packet
+            printf("%d: %u\n", r, rtcRays[p].primID[i]);
+        }*/
 
         double timeInMS = timer.tick();
         timeSum += timeInMS;
@@ -307,11 +318,6 @@ int main(int argc, char *argv[]) {
     std::vector<SimpleRay> rays;
     loadOFF(argv[1], mesh);
     loadRFF(argv[2], rays);
-    for (int i = 0; i < 10000000; ++i) {
-        rays.push_back(rays[0]);
-    }
-
-
     int timingIterations = 10;
     traceOptiX(mesh, rays, timingIterations);
     traceEmbree(mesh, rays, timingIterations);
