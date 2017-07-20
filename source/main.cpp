@@ -1,6 +1,16 @@
 // Embree Packet Size; 8 gives best speedup on my machine for perfectly coherent rays
 #define PACKET_SIZE 8
 
+// Beta; TODO: pass in from command line
+#define OUTPUT_COVERAGE_IMAGES 0
+
+#if OUTPUT_COVERAGE_IMAGES
+#define RAYS_PER_PIXEL 4
+#define IMAGE_WIDTH 2
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+#endif
 
 #include <stdio.h>
 #include <iostream>
@@ -24,6 +34,14 @@
 #define __TBBMALLOC_NO_IMPLICIT_LINKAGE 1
 #include <tbb/tbb.h>
 
+
+#if OUTPUT_COVERAGE_IMAGES
+int extractBit(const std::vector<unsigned char>& bitVector, int index) {
+    int byteIndex = index / 8;
+    int bitIndex = index % 8;
+    return ((bitVector[byteIndex] >> (bitIndex)) & 1);
+}
+#endif
 
 // Embree setup
 #include "embree/rtcore.h"
@@ -163,7 +181,7 @@ void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, cons
     cudaMalloc(&d_verts, sizeof(vec3) * mesh.vertices.size());
     cudaMemcpy(d_verts, mesh.vertices.data(), sizeof(vec3) * mesh.vertices.size(), cudaMemcpyHostToDevice);
     void* d_hits;
-    cudaMalloc(&d_hits, 64 * ((rays.size() / 64) + 1)); // have some buffer space
+    cudaMalloc(&d_hits, 8 * ((rays.size() / 64) + 1)); // have some buffer space
     cudaMemset(d_hits, 255, 1);
 
 
@@ -209,6 +227,27 @@ void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, cons
     std::cout << "------ OptiX Prime API Average ------- " << std::endl;
     std::cout << aveTimeInMS << " ms" << std::endl;
     std::cout << (rays.size()*1000.0) / aveTimeInMS << " rays/s" << std::endl;
+
+#if OUTPUT_COVERAGE_IMAGES
+    // Chop off any excess (there should be no excess...)
+    int pixelCount = rays.size() / RAYS_PER_PIXEL;
+    int imageHeight = pixelCount / IMAGE_WIDTH;
+    std::vector<unsigned char> coverageMask;
+    coverageMask.resize(pixelCount);
+    std::vector<unsigned char> h_hits;
+    h_hits.resize(rays.size() / 8);
+    cudaMemcpy(h_hits.data(), d_hits, rays.size() / 8, cudaMemcpyDeviceToHost);
+    for (int i = 0; i < pixelCount; ++i) {
+        int coveredCount = 0;
+        for (int j = 0; j < RAYS_PER_PIXEL; ++j) {
+            coveredCount += extractBit(h_hits, i*RAYS_PER_PIXEL + j);
+        }
+        coverageMask[i] = (unsigned char)((float(coveredCount) / float(RAYS_PER_PIXEL))*255.0f);
+    }
+    std::cout << "Outputing OptiX Coverage Mask" << std::endl;
+    stbi_write_png("optixCoverageMask.png", IMAGE_WIDTH, imageHeight, 1, coverageMask.data(), IMAGE_WIDTH);
+#endif
+
 
     cudaFree(d_rays);
     cudaFree(d_tris);
