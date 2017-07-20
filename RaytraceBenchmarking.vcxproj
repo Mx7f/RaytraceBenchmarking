@@ -41,8 +41,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include\optixu;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;$(ProjectDir)embree\include\;$(ProjectDir)tbb\include\;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)tbb\win64\lib;$(ProjectDir)embree\win64\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\lib64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.1.0\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.1.0\include\optixu;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;$(ProjectDir)embree\include\;$(ProjectDir)tbb\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)tbb\win64\lib;$(ProjectDir)embree\win64\lib;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.1.0\lib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 4.0.2\include\optixu;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;$(ProjectDir)embree\include\;$(ProjectDir)tbb\include\;$(IncludePath)</IncludePath>
@@ -116,6 +116,9 @@ xcopy /y /d  "$(ProjectDir)embree\win64\bin\*.dll" "$(TargetDir)"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\stb_image_write.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

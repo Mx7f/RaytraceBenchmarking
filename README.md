@@ -25,7 +25,7 @@ Changelog:
 
 7/20/2017:
 - Added code for debugging by outputting a coverage mask (of the OptiX solver) to a PNG (using the public domain library stb_image_write.h); to enable change OUTPUT_COVERAGE_IMAGES to 1; you can change the number of rays per pixel averaged for the coverage mask and the image width using RAYS_PER_PIXEL and IMAGE_WIDTH; if ray counts do not evenly divide the rays into RAYS_PER_PIXEL*IMAGE_WIDTH large segments, the final excess will be cut off.
-
+- Upgraded from OptiX 4.0.2 to 4.1.0
 
 TODOs:
 Improved Documentation
