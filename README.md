@@ -7,7 +7,7 @@ This has been developed and tested solely on Windows.
 Prerequisites:
 CUDA 7.5 (for OptiX)
 Visual Studio 2013 (to work with CUDA 7.5)
-OptiX 4.1.0 (https://developer.nvidia.com/designworks/optix/download)
+[OptiX 4.1.0](https://developer.nvidia.com/designworks/optix/download) (4.0.2 should still work if you change the paths in the project file.)
 
 Embree and TBB are contained in this distribution and so do not need to be downloaded separately.
 
@@ -28,4 +28,8 @@ Changelog:
 - Upgraded from OptiX 4.0.2 to 4.1.0
 
 TODOs:
-Improved Documentation
+Improve Documentation
+Make configuration of coverage mask output programmatic
+Versioning info
+Upgrade to CUDA 8
+Upgrade Embree to latest
