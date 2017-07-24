@@ -6,8 +6,8 @@ This has been developed and tested solely on Windows.
 
 Prerequisites:
 CUDA 7.5 (for OptiX)
-Visual Studio 2013 (for CUDA 7.5)
-OptiX 4.0.2 (https://developer.nvidia.com/designworks/optix/download)
+Visual Studio 2013 (to work with CUDA 7.5)
+[OptiX 4.1.0](https://developer.nvidia.com/designworks/optix/download) (4.0.2 should still work if you change the paths in the project file.)
 
 Embree and TBB are contained in this distribution and so do not need to be downloaded separately.
 
@@ -20,3 +20,16 @@ will load cube.off as a mesh and trace the rays given in simple.rff, using both 
 RFF is a simple text format for storing rays consisting a header line, a line with the number of rays, then that many subsequent lines specifying the rays as 6 floats (3 for xyz origin, 3 for xyz direction)
 
 Neither the OFF nor the RFF loaders are robust. The OFF loader can only handle triangle meshes, and neither loader can handle comments or malformed input in any way.
+
+Changelog:
+
+7/20/2017:
+- Added code for debugging by outputting a coverage mask (of the OptiX solver) to a PNG (using the public domain library stb_image_write.h); to enable change OUTPUT_COVERAGE_IMAGES to 1; you can change the number of rays per pixel averaged for the coverage mask and the image width using RAYS_PER_PIXEL and IMAGE_WIDTH; if ray counts do not evenly divide the rays into RAYS_PER_PIXEL*IMAGE_WIDTH large segments, the final excess will be cut off.
+- Upgraded from OptiX 4.0.2 to 4.1.0
+
+TODOs:
+Improve Documentation
+Make configuration of coverage mask output programmatic
+Versioning info
+Upgrade to CUDA 8
+Upgrade Embree to latest
