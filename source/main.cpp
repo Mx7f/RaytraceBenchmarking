@@ -276,6 +276,7 @@ void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, cons
     std::cout << "------ OptiX Prime API ------- " << std::endl;
     std::cout << "avg: " << aveTimeInMS << "ms" << std::endl;
 	std::cout << "min: " << timeMin << "ms" << std::endl;
+	std::cout << "avg mrays/s: " << (rays.size() / 1000000.0) / (aveTimeInMS / 1000.0) << std::endl;
 	std::cout << "max mrays/s: " << (rays.size() / 1000000.0) / (timeMin / 1000.0) << std::endl;
 
 #if OUTPUT_COVERAGE_IMAGES
@@ -390,6 +391,7 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
     std::cout << "------ Embree Stream API ------- " << std::endl;
 	std::cout << "avg: " << aveTimeInMS << "ms" << std::endl;
 	std::cout << "min: " << timeMin << "ms" << std::endl;
+	std::cout << "avg mrays/s: " << (rays.size() / 1000000.0) / (aveTimeInMS / 1000.0) << std::endl;
 	std::cout << "max mrays/s: " << (rays.size() / 1000000.0) / (timeMin / 1000.0) << std::endl;
 
     //cleanup
