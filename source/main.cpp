@@ -5,11 +5,11 @@
 #define OUTPUT_COVERAGE_IMAGES 0
 
 #if OUTPUT_COVERAGE_IMAGES
-#define RAYS_PER_PIXEL 4
-#define IMAGE_WIDTH 2
+# define RAYS_PER_PIXEL 4
+# define IMAGE_WIDTH 2
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+# define STB_IMAGE_WRITE_IMPLEMENTATION
+# include "stb_image_write.h"
 #endif
 
 #define VERBOSE_OUTPUT 0
@@ -104,64 +104,103 @@ struct SimpleMesh {
 };
 
 static void loadOFF(std::string filename, SimpleMesh& mesh) {
-    std::ifstream inFile(filename.c_str());
-    std::string line;
-    std::getline(inFile, line);
-    // TODO: check that its OFF
-    std::getline(inFile, line);
-    std::istringstream in(line);
-    int numVertices, numTris;
-    in >> numVertices >> numTris;
+	if (filename.back() == 'b') {
+		// binary
+		FILE* file = fopen(filename.c_str(), "rb");
+		char header[4] = {};
+		fread(header, sizeof(header), 1, file);
 
-    mesh.vertices.resize(numVertices);
-    mesh.indices.resize(numTris*3);
+		int vertexCount = 0;
+		int triCount = 0;
+		int edgeCount = 0;
+		fread(&vertexCount, sizeof(vertexCount), 1, file);
+		fread(&triCount, sizeof(triCount), 1, file);
+		fread(&edgeCount, sizeof(edgeCount), 1, file);
 
-    for (int i = 0; i < numVertices; ++i) {
-        std::string line;
-        std::getline(inFile, line);
-        std::istringstream in(line);      
-        float x, y, z;
-        in >> x >> y >> z;
-        mesh.vertices[i] = { x,y,z };
-    }
+		mesh.vertices.resize(vertexCount);
+		fread(mesh.vertices.data(), sizeof(vec3) * vertexCount, 1, file);
 
-    for (int i = 0; i < numTris; ++i) {
-        std::string line;
-        std::getline(inFile, line);
-        std::istringstream in(line);     
+		// note - assuming 3 vertices per polygon (triangles)
+		mesh.indices.resize(triCount * 3);
+		fread(mesh.indices.data(), sizeof(int) * 3 * triCount, 1, file);
 
-        int dummy, i0, i1, i2;
-        in >> dummy >> i0 >> i1 >> i2;
-        assert(dummy == 3);
-        int t = i * 3;
-        mesh.indices[t + 0] = i0;
-        mesh.indices[t + 1] = i1;
-        mesh.indices[t + 2] = i2;
-    }
+		fclose(file);
+	}
+	else {
+		std::ifstream inFile(filename.c_str());
+		std::string line;
+		std::getline(inFile, line);
+		// TODO: check that its OFF
+		std::getline(inFile, line);
+		std::istringstream in(line);
+		int numVertices, numTris;
+		in >> numVertices >> numTris;
 
+		mesh.vertices.resize(numVertices);
+		mesh.indices.resize(numTris * 3);
+
+		for (int i = 0; i < numVertices; ++i) {
+			std::string line;
+			std::getline(inFile, line);
+			std::istringstream in(line);
+			float x, y, z;
+			in >> x >> y >> z;
+			mesh.vertices[i] = { x, y, z };
+		}
+
+		for (int i = 0; i < numTris; ++i) {
+			std::string line;
+			std::getline(inFile, line);
+			std::istringstream in(line);
+
+			int dummy, i0, i1, i2;
+			in >> dummy >> i0 >> i1 >> i2;
+			assert(dummy == 3);
+			int t = i * 3;
+			mesh.indices[t + 0] = i0;
+			mesh.indices[t + 1] = i1;
+			mesh.indices[t + 2] = i2;
+		}
+	}
 }
 
 static void loadRFF(std::string filename, std::vector<SimpleRay>& rays) {
-    std::ifstream inFile(filename.c_str());
-    std::string line;
-    std::getline(inFile, line);
-    // TODO: check that its RFF
-    std::getline(inFile, line);
-    std::istringstream in(line);
-    int numRays;
-    in >> numRays;
+	if (filename.back() == 'b') {
+		// binary
+		FILE* file = fopen(filename.c_str(), "rb");
+		char header[4] = {};
+		fread(header, sizeof(header), 1, file);
 
-    rays.resize(numRays);
+		int rayCount = 0;
+		fread(&rayCount, sizeof(rayCount), 1, file);
 
-    for (int i = 0; i < numRays; ++i) {
-        std::string line;
-        std::getline(inFile, line);
-        std::istringstream in(line);
-        float ox, oy, oz, dx, dy, dz;
-        in >> ox >> oy >> oz >> dx >> dy >> dz;
-        rays[i].o = { ox,oy,oz };
-        rays[i].d = { dx,dy,dz };
-    }
+		rays.resize(rayCount);
+		fread(rays.data(), sizeof(SimpleRay) * rayCount, 1, file);
+
+		fclose(file);
+	}
+	else {
+		std::ifstream inFile(filename.c_str());
+		std::string line;
+		std::getline(inFile, line);
+		// TODO: check that its RFF
+		std::getline(inFile, line);
+		std::istringstream in(line);
+		int numRays;
+		in >> numRays;
+
+		rays.resize(numRays);
+
+		for (int i = 0; i < numRays; ++i) {
+			std::string line;
+			std::getline(inFile, line);
+			std::istringstream in(line);
+			float ox, oy, oz, dx, dy, dz;
+			in >> ox >> oy >> oz >> dx >> dy >> dz;
+			rays[i].o = { ox, oy, oz };
+			rays[i].d = { dx, dy, dz };
+		}
+	}
 }
 
 void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, const int timing_iterations) {
@@ -241,7 +280,7 @@ void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, cons
 
 #if OUTPUT_COVERAGE_IMAGES
     // Chop off any excess (there should be no excess...)
-    int pixelCount = rays.size() / RAYS_PER_PIXEL;
+    int pixelCount = int(rays.size() / RAYS_PER_PIXEL);
     int imageHeight = pixelCount / IMAGE_WIDTH;
     std::vector<unsigned char> coverageMask;
     coverageMask.resize(pixelCount);
@@ -360,12 +399,23 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
 }
 
 int main(int argc, char *argv[]) {
-    assert(argc == 3);
-    SimpleMesh mesh;
-    std::vector<SimpleRay> rays;
+	assert(argc == 3);
+	int timingIterations = 100;
+
+	SimpleTimer timer;
+	timer.init();
+
+	// import the scene and rays
+	SimpleMesh mesh;
+	std::vector<SimpleRay> rays;
+	timer.tick();
+	std::cout << "loading scene: " << argv[1] << std::endl;
     loadOFF(argv[1], mesh);
+	std::cout << "loading rays: " << argv[2] << std::endl;
     loadRFF(argv[2], rays);
-    int timingIterations = 100;
+	double importTimeS = timer.tick() / 1000.0;
+	std::cout << "load time: " << importTimeS << std::endl;
+	std::cout << std::endl;
 
 	std::cout << "mesh: " << argv[1] << std::endl;
 	std::cout << "vertices: " << mesh.vertices.size() << std::endl;
