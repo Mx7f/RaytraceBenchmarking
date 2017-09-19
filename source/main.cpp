@@ -311,7 +311,7 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
     auto device = rtcNewDevice(nullptr);
-    auto scene = rtcDeviceNewScene(device, RTC_SCENE_COHERENT | RTC_SCENE_STATIC, RTCAlgorithmFlags(RTC_INTERSECT_STREAM | RTC_INTERSECT_COHERENT));
+	auto scene = rtcDeviceNewScene(device, RTC_SCENE_COHERENT | RTC_SCENE_STATIC | RTC_SCENE_HIGH_QUALITY, RTCAlgorithmFlags(RTC_INTERSECT_STREAM | RTC_INTERSECT_COHERENT));
     auto geomID = rtcNewTriangleMesh(scene, RTC_GEOMETRY_STATIC, triCount, mesh.vertices.size(), 1);
 
     float4* vtxPtr = (float4*)rtcMapBuffer(scene, geomID, RTC_VERTEX_BUFFER); {
