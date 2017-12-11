@@ -5,12 +5,15 @@
 #define OUTPUT_COVERAGE_IMAGES 0
 
 #if OUTPUT_COVERAGE_IMAGES
-#define RAYS_PER_PIXEL 4
-#define IMAGE_WIDTH 2
+# define RAYS_PER_PIXEL 4
+# define IMAGE_WIDTH 2
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+# define STB_IMAGE_WRITE_IMPLEMENTATION
+# include "stb_image_write.h"
 #endif
+
+#define VERBOSE_OUTPUT 0
+
 
 #include <stdio.h>
 #include <iostream>
@@ -83,6 +86,8 @@ public:
 };
 #endif
 
+template <typename T> T min(T a, T b) { return a < b ? a : b; }
+template <typename T> T max(T a, T b) { return a > b ? a : b; }
 
 struct vec3 {
     float x, y, z;
@@ -99,64 +104,103 @@ struct SimpleMesh {
 };
 
 static void loadOFF(std::string filename, SimpleMesh& mesh) {
-    std::ifstream inFile(filename.c_str());
-    std::string line;
-    std::getline(inFile, line);
-    // TODO: check that its OFF
-    std::getline(inFile, line);
-    std::istringstream in(line);
-    int numVertices, numTris;
-    in >> numVertices >> numTris;
+	if (filename.back() == 'b') {
+		// binary
+		FILE* file = fopen(filename.c_str(), "rb");
+		char header[4] = {};
+		fread(header, sizeof(header), 1, file);
 
-    mesh.vertices.resize(numVertices);
-    mesh.indices.resize(numTris*3);
+		int vertexCount = 0;
+		int triCount = 0;
+		int edgeCount = 0;
+		fread(&vertexCount, sizeof(vertexCount), 1, file);
+		fread(&triCount, sizeof(triCount), 1, file);
+		fread(&edgeCount, sizeof(edgeCount), 1, file);
 
-    for (int i = 0; i < numVertices; ++i) {
-        std::string line;
-        std::getline(inFile, line);
-        std::istringstream in(line);      
-        float x, y, z;
-        in >> x >> y >> z;
-        mesh.vertices[i] = { x,y,z };
-    }
+		mesh.vertices.resize(vertexCount);
+		fread(mesh.vertices.data(), sizeof(vec3) * vertexCount, 1, file);
 
-    for (int i = 0; i < numTris; ++i) {
-        std::string line;
-        std::getline(inFile, line);
-        std::istringstream in(line);     
+		// note - assuming 3 vertices per polygon (triangles)
+		mesh.indices.resize(triCount * 3);
+		fread(mesh.indices.data(), sizeof(int) * 3 * triCount, 1, file);
 
-        int dummy, i0, i1, i2;
-        in >> dummy >> i0 >> i1 >> i2;
-        assert(dummy == 3);
-        int t = i * 3;
-        mesh.indices[t + 0] = i0;
-        mesh.indices[t + 1] = i1;
-        mesh.indices[t + 2] = i2;
-    }
+		fclose(file);
+	}
+	else {
+		std::ifstream inFile(filename.c_str());
+		std::string line;
+		std::getline(inFile, line);
+		// TODO: check that its OFF
+		std::getline(inFile, line);
+		std::istringstream in(line);
+		int numVertices, numTris;
+		in >> numVertices >> numTris;
 
+		mesh.vertices.resize(numVertices);
+		mesh.indices.resize(numTris * 3);
+
+		for (int i = 0; i < numVertices; ++i) {
+			std::string line;
+			std::getline(inFile, line);
+			std::istringstream in(line);
+			float x, y, z;
+			in >> x >> y >> z;
+			mesh.vertices[i] = { x, y, z };
+		}
+
+		for (int i = 0; i < numTris; ++i) {
+			std::string line;
+			std::getline(inFile, line);
+			std::istringstream in(line);
+
+			int dummy, i0, i1, i2;
+			in >> dummy >> i0 >> i1 >> i2;
+			assert(dummy == 3);
+			int t = i * 3;
+			mesh.indices[t + 0] = i0;
+			mesh.indices[t + 1] = i1;
+			mesh.indices[t + 2] = i2;
+		}
+	}
 }
 
 static void loadRFF(std::string filename, std::vector<SimpleRay>& rays) {
-    std::ifstream inFile(filename.c_str());
-    std::string line;
-    std::getline(inFile, line);
-    // TODO: check that its RFF
-    std::getline(inFile, line);
-    std::istringstream in(line);
-    int numRays;
-    in >> numRays;
+	if (filename.back() == 'b') {
+		// binary
+		FILE* file = fopen(filename.c_str(), "rb");
+		char header[4] = {};
+		fread(header, sizeof(header), 1, file);
 
-    rays.resize(numRays);
+		int rayCount = 0;
+		fread(&rayCount, sizeof(rayCount), 1, file);
 
-    for (int i = 0; i < numRays; ++i) {
-        std::string line;
-        std::getline(inFile, line);
-        std::istringstream in(line);
-        float ox, oy, oz, dx, dy, dz;
-        in >> ox >> oy >> oz >> dx >> dy >> dz;
-        rays[i].o = { ox,oy,oz };
-        rays[i].d = { dx,dy,dz };
-    }
+		rays.resize(rayCount);
+		fread(rays.data(), sizeof(SimpleRay) * rayCount, 1, file);
+
+		fclose(file);
+	}
+	else {
+		std::ifstream inFile(filename.c_str());
+		std::string line;
+		std::getline(inFile, line);
+		// TODO: check that its RFF
+		std::getline(inFile, line);
+		std::istringstream in(line);
+		int numRays;
+		in >> numRays;
+
+		rays.resize(numRays);
+
+		for (int i = 0; i < numRays; ++i) {
+			std::string line;
+			std::getline(inFile, line);
+			std::istringstream in(line);
+			float ox, oy, oz, dx, dy, dz;
+			in >> ox >> oy >> oz >> dx >> dy >> dz;
+			rays[i].o = { ox, oy, oz };
+			rays[i].d = { dx, dy, dz };
+		}
+	}
 }
 
 void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, const int timing_iterations) {
@@ -206,6 +250,7 @@ void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, cons
     SimpleTimer timer;
     timer.init();
     double timeSum = 0.0;
+	double timeMin = DBL_MAX;
     for (int i = 0; i < timing_iterations; ++i) {
         auto query = model->createQuery(queryType);
         query->setRays(rayBuffer);
@@ -217,20 +262,26 @@ void traceOptiX(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, cons
         query->finish();
         cudaDeviceSynchronize();
         double timeInMS = timer.tick();
+
         timeSum += timeInMS;
+		timeMin = min(timeMin, timeInMS);
+#if VERBOSE_OUTPUT
         std::cout << "OptiX Prime Iteration " << i << std::endl;
         std::cout << timeInMS << " ms" << std::endl;
         std::cout << (rays.size()*1000.0)/timeInMS << " rays/s" << std::endl;
+#endif
     }
 
     double aveTimeInMS = timeSum / timing_iterations;
-    std::cout << "------ OptiX Prime API Average ------- " << std::endl;
-    std::cout << aveTimeInMS << " ms" << std::endl;
-    std::cout << (rays.size()*1000.0) / aveTimeInMS << " rays/s" << std::endl;
+    std::cout << "------ OptiX Prime API ------- " << std::endl;
+    std::cout << "avg: " << aveTimeInMS << "ms" << std::endl;
+	std::cout << "min: " << timeMin << "ms" << std::endl;
+	std::cout << "avg mrays/s: " << (rays.size() / 1000000.0) / (aveTimeInMS / 1000.0) << std::endl;
+	std::cout << "max mrays/s: " << (rays.size() / 1000000.0) / (timeMin / 1000.0) << std::endl;
 
 #if OUTPUT_COVERAGE_IMAGES
     // Chop off any excess (there should be no excess...)
-    int pixelCount = rays.size() / RAYS_PER_PIXEL;
+    int pixelCount = int(rays.size() / RAYS_PER_PIXEL);
     int imageHeight = pixelCount / IMAGE_WIDTH;
     std::vector<unsigned char> coverageMask;
     coverageMask.resize(pixelCount);
@@ -260,7 +311,7 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
     auto device = rtcNewDevice(nullptr);
-    auto scene = rtcDeviceNewScene(device, RTC_SCENE_COHERENT | RTC_SCENE_STATIC, RTCAlgorithmFlags(RTC_INTERSECT_STREAM | RTC_INTERSECT_COHERENT));
+	auto scene = rtcDeviceNewScene(device, RTC_SCENE_COHERENT | RTC_SCENE_STATIC | RTC_SCENE_HIGH_QUALITY, RTCAlgorithmFlags(RTC_INTERSECT_STREAM | RTC_INTERSECT_COHERENT));
     auto geomID = rtcNewTriangleMesh(scene, RTC_GEOMETRY_STATIC, triCount, mesh.vertices.size(), 1);
 
     float4* vtxPtr = (float4*)rtcMapBuffer(scene, geomID, RTC_VERTEX_BUFFER); {
@@ -288,6 +339,7 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
     SimpleTimer timer;
     timer.init();
     double timeSum = 0.0;
+	double timeMin = DBL_MAX;
     for (int i = 0; i < timing_iterations; ++i) {
         RTCIntersectContext context;
         context.flags = RTCIntersectFlags(RTC_INTERSECT_COHERENT);
@@ -325,42 +377,64 @@ void traceEmbree(const SimpleMesh& mesh, const std::vector<SimpleRay>& rays, con
                 rtcIntersectNM(scene, &context, (RTCRayN*)&rtcRays[r], PACKET_SIZE, numPackets, sizeof(RTCRayNt<PACKET_SIZE>));
             } // for 
         }); // parallel for
-
-        /*
-        for (int r = 0; r < rays.size(); ++r) {
-            int p = r / PACKET_SIZE; // Packet Index
-            int i = r % PACKET_SIZE; // Index in Packet
-            printf("%d: %u\n", r, rtcRays[p].primID[i]);
-        }*/
-
         double timeInMS = timer.tick();
+
         timeSum += timeInMS;
+		timeMin = min(timeMin, timeInMS);
+#if VERBOSE_OUTPUT
         std::cout << "Embree Stream API Iteration " << i << std::endl;
         std::cout << timeInMS << " ms" << std::endl;
         std::cout << (rays.size()*1000.0) / timeInMS << " rays/s" << std::endl;
+#endif
     }
     double aveTimeInMS = timeSum / timing_iterations;
-    std::cout << "------ Embree Stream API Average ------- " << std::endl;
-    std::cout << aveTimeInMS << " ms" << std::endl;
-    std::cout << (rays.size()*1000.0) / aveTimeInMS << " rays/s" << std::endl;
+    std::cout << "------ Embree Stream API ------- " << std::endl;
+	std::cout << "avg: " << aveTimeInMS << "ms" << std::endl;
+	std::cout << "min: " << timeMin << "ms" << std::endl;
+	std::cout << "avg mrays/s: " << (rays.size() / 1000000.0) / (aveTimeInMS / 1000.0) << std::endl;
+	std::cout << "max mrays/s: " << (rays.size() / 1000000.0) / (timeMin / 1000.0) << std::endl;
 
     //cleanup
     rtcDeleteGeometry(scene, geomID);
     rtcDeleteScene(scene);
     rtcDeleteDevice(device);
-
 }
 
 int main(int argc, char *argv[]) {
-    assert(argc == 3);
-    SimpleMesh mesh;
-    std::vector<SimpleRay> rays;
+	assert(argc == 3);
+	int timingIterations = 100;
+
+	SimpleTimer timer;
+	timer.init();
+
+	// import the scene and rays
+	SimpleMesh mesh;
+	std::vector<SimpleRay> rays;
+	timer.tick();
+	std::cout << "loading scene: " << argv[1] << std::endl;
     loadOFF(argv[1], mesh);
+	std::cout << "loading rays: " << argv[2] << std::endl;
     loadRFF(argv[2], rays);
-    int timingIterations = 10;
+	double importTimeS = timer.tick() / 1000.0;
+	std::cout << "load time: " << importTimeS << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "mesh: " << argv[1] << std::endl;
+	std::cout << "vertices: " << mesh.vertices.size() << std::endl;
+	std::cout << "triangles: " << mesh.indices.size() / 3 << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "rays: " << argv[2] << std::endl;
+	std::cout << "ray count: " << rays.size() << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "iterations: " << timingIterations << std::endl;
+	std::cout << std::endl;
+
     traceOptiX(mesh, rays, timingIterations);
     std::cout << std::endl;
     traceEmbree(mesh, rays, timingIterations);
-    getchar();
+	std::cout << std::endl;
+
     return 0;
 }
