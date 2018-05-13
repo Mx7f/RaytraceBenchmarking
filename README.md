@@ -28,8 +28,8 @@ Changelog:
 - Upgraded from OptiX 4.0.2 to 4.1.0
 
 TODOs:
-Improve Documentation
-Make configuration of coverage mask output programmatic
-Versioning info
-Upgrade to CUDA 8
-Upgrade Embree to latest
+- Improve Documentation
+- Make configuration of coverage mask output programmatic
+- Versioning info
+- Upgrade to CUDA 9/Optix 5.1
+- Upgrade Embree to latest
