@@ -22,6 +22,9 @@ RFF is a simple text format for storing rays consisting a header line, a line wi
 Neither the OFF nor the RFF loaders are robust. The OFF loader can only handle triangle meshes, and neither loader can handle comments or malformed input in any way.
 
 Changelog:
+12/10/2017: 
+- Added support for non-standard binary versions of OFF and RFF file formats.
+- Added scene quality flag to Embree build
 
 7/20/2017:
 - Added code for debugging by outputting a coverage mask (of the OptiX solver) to a PNG (using the public domain library stb_image_write.h); to enable change OUTPUT_COVERAGE_IMAGES to 1; you can change the number of rays per pixel averaged for the coverage mask and the image width using RAYS_PER_PIXEL and IMAGE_WIDTH; if ray counts do not evenly divide the rays into RAYS_PER_PIXEL*IMAGE_WIDTH large segments, the final excess will be cut off.
